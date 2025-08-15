@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>FairShare</title>
+
+<style>
+  :root{
+    --bg1:#05060a;
+    --bg2:#0b1222;
+    --card:#0f1326cc;
+    --accent:#7c3aed;   /* purple */
+    --accent2:#22d3ee;  /* cyan */
+    --text:#e7e9fb;
+    --muted:#9aa4c7;
+    --ok:#10b981;
+    --danger:#ef4444;
+    --glass: rgba(255,255,255,0.03);
+    --ring: 0 0 0 6px rgba(124,58,237,0.06), 0 0 28px rgba(34,211,238,0.06);
+  }
+
+  /* Basic layout */
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background:
+      radial-gradient(1000px 500px at 80% -10%, rgba(34,211,238,.10), transparent 40%),
+      radial-gradient(800px 800px at -10% 110%, rgba(124,58,237,.10), transparent 40%),
+      linear-gradient(180deg,var(--bg2),var(--bg1));
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    min-height:100vh;
+    padding:14px;
+    box-sizing:border-box;
+  }
+
+  .wrap{ max-width:980px; margin:0 auto; }
+
+  .brand{
+    display:flex; gap:12px; align-items:center; margin-bottom:12px;
+  }
+  .logo{
+    width:48px; height:48px; border-radius:12px;
+    background: conic-gradient(from 180deg,var(--accent),var(--accent2));
+    box-shadow: 0 8px 30px rgba(124,58,237,.18), inset 0 0 12px rgba(34,211,238,.12);
+  }
+  .brand h1{ margin:0; font-size:20px; letter-spacing:.2px; }
+  .brand p{ margin:0; color:var(--muted); font-size:13px; }
+
+  /* Card */
+  .card{
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:1px solid rgba(124,58,237,0.12);
+    border-radius:16px;
+    padding:12px;
+    box-shadow: var(--ring);
+    margin-bottom:12px;
+  }
+
+  .row{ display:flex; gap:8px; align-items:center; }
+  .row.wrap{ flex-wrap:wrap; }
+
+  input[type="text"], input[type="number"], select{
+    width:100%; padding:12px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.06);
+    background:#0f141f; color:var(--text); outline:none; font-size:15px;
+  }
+  input::placeholder{ color:#6d78a5; }
+  input:focus{ box-shadow: var(--ring); border-color: rgba(34,211,238,0.35); }
+
+  .btn{
+    padding:10px 12px; border-radius:12px; border:0; cursor:pointer; font-weight:700;
+    background:linear-gradient(180deg,#251b4d,#171a39); color:#fff;
+    box-shadow: 0 8px 20px rgba(0,0,0,.3);
+  }
+  .btn.alt{ background: linear-gradient(180deg,#0e2e33,#0f1c2f); }
+  .btn.ok{ background: linear-gradient(180deg,#083a2b,#05261b); }
+  .btn.danger{ background: linear-gradient(180deg,#3b1010,#210a0a); }
+
+  .section-title{ font-size:14px; margin-bottom:8px; font-weight:700; color:#fff; }
+
+  .friend-list{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .chip{
+    background:var(--glass); padding:8px 10px; border-radius:999px; border:1px solid rgba(124,58,237,.12);
+    font-size:13px;
+  }
+
+  .consumer-list{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:8px; }
+  @media (min-width:520px){ .consumer-list{ grid-template-columns:repeat(3,1fr); } }
+  .check{ display:flex; align-items:center; gap:8px; padding:8px; border-radius:10px; background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.02); }
+
+  table{ width:100%; border-collapse:collapse; margin-top:10px; font-size:14px; border-radius:8px; overflow:hidden; }
+  th,td{ padding:10px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.03); }
+  th{ background: rgba(124,58,237,0.06); color:#eaf0ff; font-weight:700; font-size:13px; }
+
+  .result-row{ display:flex; justify-content:space-between; padding:10px; border-radius:10px; margin:8px 0; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00)); border:1px solid rgba(255,255,255,0.02); }
+  .small{ font-size:13px; color:var(--muted); }
+
+  .sep{ height:1px; background:linear-gradient(90deg, transparent, rgba(124,58,237,.4), transparent); margin:12px 0; }
+
+  .mini{ font-size:12px; color:var(--muted); margin-top:6px; }
+
+  footer{ text-align:center; color:var(--muted); font-size:12px; margin-top:8px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div>
+        <h1>FairShare</h1>
+      </div>
+    </div>
+
+    <!-- Shared total + payer -->
+    <section class="card">
+      <div class="section-title">Step 1 — Shared total</div>
+      <div class="row wrap">
+        <input id="totalShared" type="number" inputmode="decimal" placeholder="Total shared amount (₹) — amount the payer covered for everyone" />
+        <input id="payerName" type="text" placeholder="Who paid? (optional)" />
+      </div>
+      <div class="mini">Base share = total shared ÷ number of friends. Extras will be added on top of base per person.</div>
+    </section>
+
+    <!-- Friends -->
+    <section class="card">
+      <div class="section-title">Step 2 — Friends (add all who shared)</div>
+      <div class="row">
+        <input id="friendName" type="text" placeholder="Add name" />
+        <button class="btn" id="addFriendBtn">Add</button>
+      </div>
+      <div id="friendChips" class="friend-list"></div>
+      <div class="mini">Tip: long-press (mobile) or right-click (desktop) a name to remove it.</div>
+    </section>
+
+    <!-- Extras -->
+    <section class="card">
+      <div class="section-title">Step 3 — Extras (personal items)</div>
+
+      <div style="display:flex;gap:8px;">
+        <button class="btn alt" id="modeSingle">Single Person</button>
+        <button class="btn alt" id="modeMulti">Multiple People</button>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="row wrap">
+        <input id="itemName" type="text" placeholder="Item name (e.g., Fries, Cold Coffee)" />
+        <input id="itemPrice" type="number" inputmode="decimal" placeholder="Price (₹)" />
+      </div>
+
+      <div id="singleConsumer" class="consumer-list" style="margin-top:8px;"></div>
+      <div id="multiConsumer" class="consumer-list" style="margin-top:8px; display:none;"></div>
+
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn ok" id="addItemBtn">Add Extra</button>
+        <button class="btn" id="recalcBtn">Recalculate</button>
+      </div>
+
+      <table id="extrasTable" aria-live="polite">
+        <thead>
+          <tr><th>Item</th><th>Price (₹)</th><th>Consumers</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="mini">Tap an extra row to remove it.</div>
+    </section>
+
+    <!-- Results -->
+    <section class="card">
+      <div class="section-title">Step 4 — Final split</div>
+      <div id="baseInfo" class="small"></div>
+      <div id="resultList" style="margin-top:8px;"></div>
+
+      <div class="sep"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn" id="exportPdfBtn">Generate PDF</button>
+        <button class="btn danger" id="clearBtn">Clear All</button>
+      </div>
+    </section>
+
+    <footer>Created By Rushi</footer>
+  </div>
+
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+/* ---------- State ---------- */
+let friends = [];    // ['Alice', 'Bob']
+let extras = [];     // [{name:'Fries', price: 60, consumers:['Alice']}, ...]
+let mode = 'single'; // 'single' or 'multi'
+
+/* ---------- Helpers ---------- */
+const $ = id => document.getElementById(id);
+const money = n => '₹' + (Math.round((n||0)*100)/100).toFixed(2);
+
+function saveState(){
+  localStorage.setItem('shadow_split_v3', JSON.stringify({
+    friends, extras, mode, totalShared: $('totalShared').value||'', payerName: $('payerName').value||''
+  }));
+}
+function loadState(){
+  try{
+    const s = JSON.parse(localStorage.getItem('shadow_split_v3') || '{}');
+    if(Array.isArray(s.friends)) friends = s.friends;
+    if(Array.isArray(s.extras)) extras = s.extras;
+    if(s.mode) mode = s.mode;
+    if(s.totalShared) $('totalShared').value = s.totalShared;
+    if(s.payerName) $('payerName').value = s.payerName;
+  }catch(e){}
+}
+
+/* ---------- Render ---------- */
+function renderFriends(){
+  const container = $('friendChips'); container.innerHTML = '';
+  friends.forEach(name=>{
+    const d = document.createElement('div');
+    d.className = 'chip'; d.textContent = name;
+    // long-press to delete (mobile) & right-click for desktop
+    let t;
+    d.addEventListener('touchstart', ()=> t = setTimeout(()=> removeFriend(name), 600));
+    d.addEventListener('touchend', ()=> clearTimeout(t));
+    d.addEventListener('contextmenu', e=> { e.preventDefault(); removeFriend(name); });
+    container.appendChild(d);
+  });
+  renderConsumerPickers();
+  renderExtrasTable();
+  calcAndRender();
+}
+
+function renderConsumerPickers(){
+  const single = $('singleConsumer'); single.innerHTML = '';
+  const multi  = $('multiConsumer'); multi.innerHTML = '';
+
+  friends.forEach((f,i)=>{
+    // radio for single
+    const lbl1 = document.createElement('label'); lbl1.className='check';
+    const r = document.createElement('input'); r.type='radio'; r.name='singleConsumer'; r.value=f;
+    if(i===0) r.checked = true;
+    const sp1 = document.createElement('span'); sp1.textContent = f;
+    lbl1.appendChild(r); lbl1.appendChild(sp1);
+    single.appendChild(lbl1);
+
+    // checkbox for multi
+    const lbl2 = document.createElement('label'); lbl2.className='check';
+    const cb = document.createElement('input'); cb.type='checkbox'; cb.value=f;
+    const sp2 = document.createElement('span'); sp2.textContent = f;
+    lbl2.appendChild(cb); lbl2.appendChild(sp2);
+    multi.appendChild(lbl2);
+  });
+
+  // show/hide based on mode
+  single.style.display = (mode === 'single') ? '' : 'none';
+  multi.style.display  = (mode === 'multi') ? '' : 'none';
+
+  // update mode buttons style
+  $('modeSingle').style.outline = (mode==='single') ? '2px solid rgba(124,58,237,.28)' : 'none';
+  $('modeMulti').style.outline  = (mode==='multi') ? '2px solid rgba(124,58,237,.28)' : 'none';
+}
+
+function renderExtrasTable(){
+  const tbody = document.querySelector('#extrasTable tbody'); tbody.innerHTML = '';
+  extras.forEach((it, idx)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapeHtml(it.name)}</td><td>${money(it.price)}</td><td>${it.consumers.map(escapeHtml).join(', ')}</td>`;
+    tr.addEventListener('click', ()=> { extras.splice(idx,1); saveState(); renderExtrasTable(); calcAndRender(); });
+    tbody.appendChild(tr);
+  });
+}
+
+function escapeHtml(str=''){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
+
+/* ---------- Calculation (correct logic) ---------- */
+function parseShared(){
+  const v = parseFloat($('totalShared').value);
+  return (isFinite(v) && v > 0) ? v : 0;
+}
+
+function calcTotals(){
+  const totals = {}; // totals per person including base+extras
+  const extrasByPerson = {}; // only extras
+  friends.forEach(f => { totals[f] = 0; extrasByPerson[f] = 0; });
+
+  const totalShared = parseShared();
+  const n = friends.length || 1;
+  const baseEach = (totalShared > 0 && n > 0) ? totalShared / n : 0;
+
+  // add base to each
+  friends.forEach(f => totals[f] += baseEach);
+
+  // process extras
+  extras.forEach(it => {
+    const consumers = Array.isArray(it.consumers) && it.consumers.length ? it.consumers : [];
+    const m = consumers.length || 1;
+    const per = it.price / m;
+    consumers.forEach(c => {
+      if(extrasByPerson[c] !== undefined){ extrasByPerson[c] += per; totals[c] += per; }
+    });
+  });
+
+  return { totals, extrasByPerson, baseEach, totalShared };
+}
+
+function calcAndRender(){
+  const { totals, extrasByPerson, baseEach, totalShared } = calcTotals();
+  const baseInfo = $('baseInfo');
+  const resultList = $('resultList');
+
+  if(!friends.length){
+    baseInfo.textContent = '';
+    resultList.innerHTML = '<div class="small">Add friends to get started.</div>';
+    return;
+  }
+  baseInfo.innerHTML = `Shared total: <strong>${money(totalShared)}</strong> · Friends: <strong>${friends.length}</strong> · Base each: <strong>${money(baseEach)}</strong>`;
+
+  // show breakdown: name | base | extras | total
+  resultList.innerHTML = friends.map(f => {
+    return `<div class="result-row">
+      <div>
+        <div style="font-weight:700">${escapeHtml(f)}</div>
+        <div class="small">Base ${money(baseEach)} • Extras ${money(extrasByPerson[f]||0)}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:800; color:#dbe7ff">${money(totals[f]||0)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- Events ---------- */
+$('addFriendBtn').addEventListener('click', ()=>{
+  const name = $('friendName').value.trim();
+  if(!name) return;
+  if(friends.includes(name)){ $('friendName').value=''; return; }
+  friends.push(name);
+  $('friendName').value='';
+  saveState(); renderFriends();
+});
+
+function removeFriend(name){
+  friends = friends.filter(f => f !== name);
+  // remove from extras consumers
+  extras = extras.map(it => ({...it, consumers: it.consumers.filter(c => c!==name)}));
+  saveState(); renderFriends();
+}
+
+$('modeSingle').addEventListener('click', ()=>{ mode='single'; saveState(); renderConsumerPickers(); });
+$('modeMulti').addEventListener('click', ()=>{ mode='multi'; saveState(); renderConsumerPickers(); });
+
+$('addItemBtn').addEventListener('click', ()=>{
+  const nm = $('itemName').value.trim();
+  const price = parseFloat($('itemPrice').value);
+  if(!nm || !(price > 0)){ alert('Enter item name and valid price'); return; }
+  if(!friends.length){ alert('Add friends first'); return; }
+
+  let consumers = [];
+  if(mode === 'single'){
+    const sel = document.querySelector('#singleConsumer input[type="radio"]:checked');
+    if(!sel){ alert('Select person'); return; }
+    consumers = [sel.value];
+  } else {
+    document.querySelectorAll('#multiConsumer input[type="checkbox"]:checked').forEach(cb => consumers.push(cb.value));
+    if(consumers.length === 0){ alert('Select at least one person'); return; }
+  }
+
+  extras.push({ name: nm, price: price, consumers });
+  $('itemName').value=''; $('itemPrice').value='';
+  // clear multi checks for convenience
+  document.querySelectorAll('#multiConsumer input[type="checkbox"]').forEach(cb => cb.checked = false);
+  saveState(); renderExtrasTable(); calcAndRender();
+});
+
+$('recalcBtn').addEventListener('click', calcAndRender);
+
+$('clearBtn').addEventListener('click', ()=>{
+  if(!confirm('Clear all friends, extras, and shared total?')) return;
+  friends = []; extras = []; $('totalShared').value=''; $('payerName').value='';
+  saveState(); renderFriends(); renderExtrasTable(); calcAndRender();
+});
+
+$('totalShared').addEventListener('input', ()=> { saveState(); calcAndRender(); });
+$('payerName').addEventListener('input', saveState);
+
+/* ---------- PDF Generation (clean white with color highlights) ---------- */
+$('exportPdfBtn').addEventListener('click', ()=>{
+  if(!friends.length){ alert('Add friends first'); return; }
+
+  const { totals, extrasByPerson, baseEach, totalShared } = calcTotals();
+  const payer = $('payerName').value.trim();
+  const now = new Date();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'pt', format:'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  let y = 56;
+
+  // --- Page border ---
+  doc.setDrawColor(120, 0, 255); // purple border
+  doc.setLineWidth(3);
+  doc.rect(10, 10, pageW - 20, pageH - 20);
+
+  // --- Header ---
+  doc.setFillColor(50, 0, 100); // dark purple header background
+  doc.rect(0, 0, pageW, 50, 'F'); 
+
+  doc.setFont('helvetica','bold'); 
+  doc.setFontSize(18);
+  doc.setTextColor(255,255,255); // white text on header
+  doc.text('FairShare Bill Report', 40, 35); 
+  y = 70;
+
+  doc.setFont('helvetica','normal'); 
+  doc.setFontSize(11);
+  doc.setTextColor(20,20,40);
+  doc.text(`Date & Time: ${now.toLocaleString()}`, 40, y); y += 14;
+  if(payer) { doc.text(`Paid by: ${payer}`, 40, y); y += 14; }
+  doc.text(`Friends (${friends.length}): ${friends.join(', ')}`, 40, y); y += 18;
+
+  // --- Shared summary ---
+  doc.setDrawColor(180,120,255);
+  doc.setLineWidth(1);
+  doc.line(40, y, pageW-40, y); 
+  y += 14;
+
+  doc.setFont('helvetica','bold'); 
+  doc.setFontSize(13);
+  doc.text('Shared Total (Base Split)', 40, y); 
+  y += 14;
+
+  doc.setFont('helvetica','normal'); 
+  doc.setFontSize(12);
+  doc.text(`Shared total: ${money(totalShared)}   |   Base per person: ${money(baseEach)}`, 40, y); 
+  y += 20;
+
+  // --- Extras list ---
+  doc.setDrawColor(180,120,255); 
+  doc.line(40, y, pageW-40, y); 
+  y += 14;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(13);
+  doc.text('Extra Items', 40, y); y += 14;
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(11);
+
+  if(extras.length === 0){
+    doc.text('No extra items added.', 40, y); y += 16;
+  } else {
+    extras.forEach(it => {
+      const line1 = `${it.name} — ${money(it.price)}`;
+      const line2 = `Consumers: ${it.consumers.join(', ')}`;
+      const lines1 = doc.splitTextToSize(line1, pageW - 80);
+      const lines2 = doc.splitTextToSize(line2, pageW - 80);
+      const blockH = (lines1.length + lines2.length) * 14 + 6;
+      if(y + blockH > pageH - 80){ doc.addPage(); y = 56; }
+      doc.text(lines1, 40, y); y += lines1.length * 14;
+      doc.text(lines2, 40, y); y += lines2.length * 14;
+      y += 6;
+    });
+  }
+
+  // --- Per-person totals ---
+  if(y + 120 > pageH - 80){ doc.addPage(); y = 56; }
+  doc.setDrawColor(180,120,255); 
+  doc.line(40, y, pageW-40, y); 
+  y += 14;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(13);
+  doc.text('Per-Person Totals', 40, y); y += 16;
+  doc.setFont('helvetica','normal'); doc.setFontSize(12);
+
+  friends.forEach(f => {
+    const baseText = `Base: ${money(baseEach)}`;
+    const extraText = `Extras: ${money(extrasByPerson[f]||0)}`;
+    const totalText = `${money(totals[f]||0)}`;
+
+    // colored labels
+    doc.setFont('helvetica','normal'); doc.setFontSize(11);
+    doc.setTextColor(40,40,80);
+    doc.text(`${f}`, 40, y);
+
+    // base label (blue)
+    doc.setTextColor(35,118,255); doc.setFontSize(10);
+    doc.text(baseText, 40, y + 12);
+
+    // extras label (orange)
+    doc.setTextColor(230,120,30); doc.setFontSize(10);
+    doc.text(extraText, 180, y + 12);
+
+    // total (green)
+    doc.setFont('helvetica','bold'); doc.setFontSize(12);
+    doc.setTextColor(14,150,90);
+    doc.text(totalText, pageW - 100, y + 6);
+
+    y += 28;
+    if(y > pageH - 60){ doc.addPage(); y = 56; }
+  });
+
+  // --- Footer note ---
+  // y += 8;
+  // doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  // doc.setTextColor(90,90,120);
+  // doc.text('Generated by Shadow Splitter (Solo Leveling theme)', 40, y);
+
+  // --- Save ---
+  doc.save(`shadow_split_${now.getTime()}.pdf`);
+});
+
+
+/* ---------- Init ---------- */
+loadState();
+renderFriends();
+renderExtrasTable();
+renderConsumerPickers();
+calcAndRender();
+</script>
+</body>
+</html>
